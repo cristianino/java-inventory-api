@@ -1,0 +1,18 @@
+# Configuración de logging para Loki
+logging:
+  level:
+    com.inventory: DEBUG
+    org.springframework: INFO
+    org.hibernate: INFO
+    io.github.resilience4j: DEBUG
+  pattern:
+    console: "%clr(%d{ISO8601}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+
+# Configuración específica para Loki
+loki:
+  url: http://localhost:3100
+  enabled: true
+  labels:
+    application: java-inventory-api
+    environment: ${spring.profiles.active:dev}
+    service: inventory-service

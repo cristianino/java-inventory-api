@@ -1,21 +1,25 @@
 version: '3.8'
 
 services:
-  # Inventory API Service
-  inventory-api:
-    build: .
-    container_name: inventory-api
+  # Inventory API Service (Development)
+  inventory-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: inventory-api-dev
     ports:
-      - "8082:8080"  # Puerto diferente para evitar conflicto con product-api
+      - "8082:8080"  # Puerto 8082 para evitar conflicto con product-api
+      - "5006:5005"  # Puerto de debug (cambiado a 5006 para evitar conflicto)
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://java-product-api-postgres-dev:5432/inventoryapi
       - SPRING_DATASOURCE_USERNAME=dev
       - SPRING_DATASOURCE_PASSWORD=devpass123
       - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://java-product-api-app-dev:8080
-      - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
+      - PRODUCTS_API_KEY=your-secret-api-key-here
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     networks:
-      - dev-network  # Usando la misma red del product-api
+      - java-product-api_dev-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
@@ -24,8 +28,6 @@ services:
       retries: 5
       start_period: 60s
 
-# Red externa que se conecta con la red del product-api
 networks:
-  dev-network:
+  java-product-api_dev-network:
     external: true
-    name: java-product-api_dev-network

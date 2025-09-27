@@ -48,28 +48,26 @@ public class InventoryController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = "application/vnd.api+json")
-    @Operation(summary = "Create new inventory entry", description = "Creates a new inventory entry for a product")
+    @Operation(summary = "Create new inventory item", description = "Creates a new inventory item with validation")
     public ResponseEntity<String> createInventory(@Valid @RequestBody CreateInventoryRequest request) {
+        logger.info("Creating inventory for product: {} with quantity: {}", request.getProductId(), request.getQuantity());
         try {
-            logger.info("Creating inventory for product: {}", request.getProductId());
+            Inventory inventory = createInventoryUseCase.execute(
+                request.getProductId(), 
+                request.getQuantity()
+            );
             
-            Inventory inventory = createInventoryUseCase.execute(request.getProductId(), request.getQuantity());
+            logger.info("Successfully created inventory with ID: {} for product: {}", inventory.getId(), request.getProductId());
+            
             InventoryDto dto = toDto(inventory);
-            
             JSONAPIDocument<InventoryDto> document = new JSONAPIDocument<>(dto);
-            byte[] jsonBytes = resourceConverter.writeDocument(document);
-            String jsonResponse = new String(jsonBytes);
+            byte[] jsonResponseBytes = resourceConverter.writeDocument(document);
+            String jsonResponse = new String(jsonResponseBytes);
             
-            logger.info("Successfully created inventory: {}", inventory.getId());
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .contentType(MediaType.valueOf("application/vnd.api+json"))
-                    .body(jsonResponse);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Invalid request for creating inventory: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.CREATED).body(jsonResponse);
         } catch (Exception e) {
-            logger.error("Error creating inventory: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error creating inventory for product: {} - {}", request.getProductId(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[{\"detail\":\"" + e.getMessage() + "\"}]}");
         }
     }
 
