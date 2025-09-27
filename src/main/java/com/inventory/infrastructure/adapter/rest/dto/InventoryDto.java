@@ -78,4 +78,39 @@ public class InventoryDto {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        
+        InventoryDto that = (InventoryDto) o;
+        
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (productId != null ? !productId.equals(that.productId) : that.productId != null) return false;
+        if (quantity != null ? !quantity.equals(that.quantity) : that.quantity != null) return false;
+        if (createdAt != null ? !createdAt.equals(that.createdAt) : that.createdAt != null) return false;
+        return updatedAt != null ? updatedAt.equals(that.updatedAt) : that.updatedAt == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (productId != null ? productId.hashCode() : 0);
+        result = 31 * result + (quantity != null ? quantity.hashCode() : 0);
+        result = 31 * result + (createdAt != null ? createdAt.hashCode() : 0);
+        result = 31 * result + (updatedAt != null ? updatedAt.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "InventoryDto{" +
+                "id=" + id +
+                ", productId='" + productId + '\'' +
+                ", quantity=" + quantity +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }
