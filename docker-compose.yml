@@ -6,14 +6,16 @@ services:
     build: .
     container_name: inventory-api
     ports:
-      - "8080:8080"
+      - "8082:8080"  # Cambiando puerto para evitar conflicto
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/inventory_db
       - SPRING_DATASOURCE_USERNAME=inventory_user
       - SPRING_DATASOURCE_PASSWORD=inventory_pass
-      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://products-service:8081
-      - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-default-api-key}
+      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://host.docker.internal:8080
+      - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy

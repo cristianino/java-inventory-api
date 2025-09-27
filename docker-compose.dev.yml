@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Inventory API Service (Development)
+  inventory-api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: inventory-api-dev
+    ports:
+      - "8082:8080"  # Puerto 8082 para evitar conflicto con product-api
+      - "5005:5005"  # Puerto de debug
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-dev:5432/inventory_db
+      - SPRING_DATASOURCE_USERNAME=inventory_user
+      - SPRING_DATASOURCE_PASSWORD=inventory_pass
+      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://host.docker.internal:8080
+      - PRODUCTS_API_KEY=your-secret-api-key-here
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    networks:
+      - inventory-dev-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # PostgreSQL Database (Development)
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: inventory-postgres-dev
+    environment:
+      - POSTGRES_DB=inventory_db
+      - POSTGRES_USER=inventory_user
+      - POSTGRES_PASSWORD=inventory_pass
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./src/main/resources/db/migration:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"  # Puerto diferente para evitar conflicto
+    networks:
+      - inventory-dev-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d inventory_db -U inventory_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer for database management (Development)
+  adminer-dev:
+    image: adminer:4.8.1
+    container_name: inventory-adminer-dev
+    ports:
+      - "8083:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres-dev
+    networks:
+      - inventory-dev-net
+    restart: unless-stopped
+
+networks:
+  inventory-dev-net:
+    name: inventory-dev-net
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+    name: inventory_postgres_dev_data

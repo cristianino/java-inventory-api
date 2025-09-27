@@ -43,21 +43,24 @@ public class ProductServiceImpl implements ProductService {
         try {
             logger.info("Fetching product with ID: {}", productId);
             
-            ProductResponse response = webClient.get()
+            ProductApiResponse response = webClient.get()
                     .uri("/api/products/{id}", productId)
                     .header("X-API-Key", apiKey)
                     .retrieve()
-                    .bodyToMono(ProductResponse.class)
+                    .bodyToMono(ProductApiResponse.class)
                     .timeout(timeout)
                     .block();
 
-            if (response != null) {
+            if (response != null && response.getData() != null) {
+                ProductData productData = response.getData();
+                ProductAttributes attributes = productData.getAttributes();
+                
                 Product product = new Product(
-                        response.getId(),
-                        response.getName(),
-                        response.getDescription(),
-                        response.getPrice(),
-                        response.isActive()
+                        productData.getId(),
+                        attributes.getName(),
+                        attributes.getDescription() != null ? attributes.getDescription() : "No description available",
+                        attributes.getPrice(),
+                        attributes.isActive() != null ? attributes.isActive() : true
                 );
                 logger.info("Successfully fetched product: {}", productId);
                 return Optional.of(product);
@@ -118,18 +121,37 @@ public class ProductServiceImpl implements ProductService {
         return false; // Fail safe - assume product doesn't exist
     }
 
-    // Inner class for product response
-    public static class ProductResponse {
+    // Inner classes for JSON:API response format
+    public static class ProductApiResponse {
+        private ProductData data;
+        private ProductLinks links;
+
+        public ProductApiResponse() {}
+
+        public ProductData getData() {
+            return data;
+        }
+
+        public void setData(ProductData data) {
+            this.data = data;
+        }
+
+        public ProductLinks getLinks() {
+            return links;
+        }
+
+        public void setLinks(ProductLinks links) {
+            this.links = links;
+        }
+    }
+
+    public static class ProductData {
         private String id;
-        private String name;
-        private String description;
-        private BigDecimal price;
-        private boolean active;
+        private String type;
+        private ProductAttributes attributes;
 
-        // Constructors
-        public ProductResponse() {}
+        public ProductData() {}
 
-        // Getters and Setters
         public String getId() {
             return id;
         }
@@ -137,6 +159,31 @@ public class ProductServiceImpl implements ProductService {
         public void setId(String id) {
             this.id = id;
         }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public ProductAttributes getAttributes() {
+            return attributes;
+        }
+
+        public void setAttributes(ProductAttributes attributes) {
+            this.attributes = attributes;
+        }
+    }
+
+    public static class ProductAttributes {
+        private String name;
+        private String description;
+        private BigDecimal price;
+        private Boolean active;
+
+        public ProductAttributes() {}
 
         public String getName() {
             return name;
@@ -162,12 +209,26 @@ public class ProductServiceImpl implements ProductService {
             this.price = price;
         }
 
-        public boolean isActive() {
+        public Boolean isActive() {
             return active;
         }
 
-        public void setActive(boolean active) {
+        public void setActive(Boolean active) {
             this.active = active;
+        }
+    }
+
+    public static class ProductLinks {
+        private String self;
+
+        public ProductLinks() {}
+
+        public String getSelf() {
+            return self;
+        }
+
+        public void setSelf(String self) {
+            this.self = self;
         }
     }
 }
