@@ -1,0 +1,17 @@
+spring:
+  profiles:
+    active: docker
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/inventory_db}
+    username: ${SPRING_DATASOURCE_USERNAME:inventory_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:inventory_pass}
+
+external:
+  products-service:
+    base-url: ${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:http://products-service:8081}
+    api-key: ${PRODUCTS_API_KEY:default-api-key}
+
+logging:
+  level:
+    root: INFO
+    com.inventory: INFO
