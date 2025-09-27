@@ -6,21 +6,16 @@ services:
     build: .
     container_name: inventory-api
     ports:
-      - "8082:8080"  # Cambiando puerto para evitar conflicto
+      - "8082:8080"  # Puerto diferente para evitar conflicto con product-api
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/inventory_db
-      - SPRING_DATASOURCE_USERNAME=inventory_user
-      - SPRING_DATASOURCE_PASSWORD=inventory_pass
-      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://host.docker.internal:8080
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://java-product-api-postgres-dev:5432/inventoryapi
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=devpass123
+      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://java-product-api-app-dev:8080
       - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
-      - backend-net
+      - dev-network  # Usando la misma red del product-api
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
@@ -29,46 +24,8 @@ services:
       retries: 5
       start_period: 60s
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: inventory-postgres
-    environment:
-      - POSTGRES_DB=inventory_db
-      - POSTGRES_USER=inventory_user
-      - POSTGRES_PASSWORD=inventory_pass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - backend-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d inventory_db -U inventory_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Mock Products Service (for testing)
-  products-service-mock:
-    image: mockserver/mockserver:latest
-    container_name: products-service-mock
-    ports:
-      - "8081:1080"
-    environment:
-      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/mockserver.json
-    volumes:
-      - ./mock-config:/config
-    networks:
-      - backend-net
-    restart: unless-stopped
-
+# Red externa que se conecta con la red del product-api
 networks:
-  backend-net:
-    name: backend-net
-    driver: bridge
-
-volumes:
-  postgres_data:
-    name: inventory_postgres_data
+  dev-network:
+    external: true
+    name: java-product-api_dev-network

@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: docker
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/inventory_db}
     username: ${SPRING_DATASOURCE_USERNAME:inventory_user}
