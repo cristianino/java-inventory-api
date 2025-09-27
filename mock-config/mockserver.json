@@ -1,0 +1,66 @@
+[
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/products/product-123",
+      "headers": {
+        "X-API-Key": ["test-api-key"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "id": "product-123",
+        "name": "Test Product",
+        "description": "A test product for inventory management",
+        "price": 19.99,
+        "active": true
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "HEAD",
+      "path": "/api/products/product-123",
+      "headers": {
+        "X-API-Key": ["test-api-key"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 200
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/api/products/invalid-product",
+      "headers": {
+        "X-API-Key": ["test-api-key"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 404,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "error": "Product not found"
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "HEAD",
+      "path": "/api/products/invalid-product",
+      "headers": {
+        "X-API-Key": ["test-api-key"]
+      }
+    },
+    "httpResponse": {
+      "statusCode": 404
+    }
+  }
+]

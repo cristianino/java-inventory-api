@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  flyway:
+    enabled: false
+  
+# External service mocking
+external:
+  products-service:
+    base-url: http://localhost:8081
+    api-key: test-api-key
+    timeout: 1000
+    max-retries: 1
+
+logging:
+  level:
+    com.inventory: DEBUG
+    org.springframework.web: DEBUG
