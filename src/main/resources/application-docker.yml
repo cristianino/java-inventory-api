@@ -3,6 +3,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/inventory_db}
     username: ${SPRING_DATASOURCE_USERNAME:inventory_user}
     password: ${SPRING_DATASOURCE_PASSWORD:inventory_pass}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
 
 external:
   products-service:
