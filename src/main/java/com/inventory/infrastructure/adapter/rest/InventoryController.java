@@ -5,9 +5,8 @@ import com.github.jasminb.jsonapi.JSONAPIDocument;
 import com.github.jasminb.jsonapi.ResourceConverter;
 import com.inventory.application.usecase.*;
 import com.inventory.domain.model.Inventory;
-import com.inventory.infrastructure.adapter.rest.dto.CreateInventoryRequest;
-import com.inventory.infrastructure.adapter.rest.dto.InventoryDto;
-import com.inventory.infrastructure.adapter.rest.dto.UpdateQuantityRequest;
+import com.inventory.infrastructure.adapter.rest.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -90,38 +90,41 @@ public class InventoryController {
                 inventories = getInventoryUseCase.findAll();
             }
             
-            if (inventories.isEmpty()) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.valueOf("application/vnd.api+json"))
-                        .body("{\"data\":[]}");
-            }
-            
-            // Usar Jackson para crear JSON:API válido de forma más limpia
-            List<InventoryDto> dtos = inventories.stream()
-                    .map(this::toDto)
-                    .collect(Collectors.toList());
-            
-            // Crear estructura JSON:API manualmente con Jackson
-            Map<String, Object> jsonApiResponse = new HashMap<>();
+            // Crear estructura de datos JSON:API
             List<Map<String, Object>> dataArray = new ArrayList<>();
             
-            for (InventoryDto dto : dtos) {
+            for (Inventory inventory : inventories) {
                 Map<String, Object> resource = new HashMap<>();
                 resource.put("type", "inventory");
-                resource.put("id", dto.getId().toString());
+                resource.put("id", inventory.getId().toString());
                 
                 Map<String, Object> attributes = new HashMap<>();
-                attributes.put("productId", dto.getProductId());
-                attributes.put("quantity", dto.getQuantity());
-                attributes.put("createdAt", dto.getCreatedAt().toString());
-                attributes.put("updatedAt", dto.getUpdatedAt().toString());
+                attributes.put("productId", inventory.getProductId());
+                attributes.put("quantity", inventory.getQuantity());
+                attributes.put("createdAt", inventory.getCreatedAt().toString());
+                attributes.put("updatedAt", inventory.getUpdatedAt().toString());
                 
                 resource.put("attributes", attributes);
                 dataArray.add(resource);
             }
             
-            jsonApiResponse.put("data", dataArray);
-            String jsonResponse = objectMapper.writeValueAsString(jsonApiResponse);
+            // Crear meta información
+            JsonApiMeta meta = new JsonApiMeta()
+                    .totalCount(inventories.size())
+                    .timestamp(LocalDateTime.now())
+                    .apiVersion("1.0.0");
+            
+            // Crear links de navegación
+            JsonApiLinks links = new JsonApiLinks()
+                    .self("/api/inventory" + (lowStockThreshold != null ? "?lowStockThreshold=" + lowStockThreshold : ""));
+            
+            // Crear respuesta JSON:API completa
+            JsonApiResponse response = new JsonApiResponse()
+                    .data(dataArray)
+                    .meta(meta)
+                    .links(links);
+            
+            String jsonResponse = objectMapper.writeValueAsString(response);
             
             return ResponseEntity.ok()
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
@@ -141,20 +144,74 @@ public class InventoryController {
             Optional<Inventory> inventory = getInventoryUseCase.findById(id);
             if (inventory.isEmpty()) {
                 logger.warn("Inventory not found: {}", id);
-                return ResponseEntity.notFound().build();
+                
+                // Error JSON:API estándar para recurso no encontrado
+                JsonApiError error = new JsonApiError()
+                        .status("404")
+                        .code("RESOURCE_NOT_FOUND")
+                        .title("Resource Not Found")
+                        .detail("Inventory with id '" + id + "' was not found")
+                        .sourcePointer("/data/id");
+                
+                JsonApiResponse errorResponse = new JsonApiResponse().addError(error);
+                String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+                
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body(jsonResponse);
             }
             
-            InventoryDto dto = toDto(inventory.get());
-            JSONAPIDocument<InventoryDto> document = new JSONAPIDocument<>(dto);
-            byte[] jsonBytes = resourceConverter.writeDocument(document);
-            String jsonResponse = new String(jsonBytes);
+            // Crear recurso individual con links y meta
+            Inventory inv = inventory.get();
+            Map<String, Object> resource = new HashMap<>();
+            resource.put("type", "inventory");
+            resource.put("id", inv.getId().toString());
+            
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put("productId", inv.getProductId());
+            attributes.put("quantity", inv.getQuantity());
+            attributes.put("createdAt", inv.getCreatedAt().toString());
+            attributes.put("updatedAt", inv.getUpdatedAt().toString());
+            resource.put("attributes", attributes);
+            
+            // Links para recurso individual
+            JsonApiLinks links = new JsonApiLinks()
+                    .self("/api/inventory/" + id);
+            
+            // Meta información
+            JsonApiMeta meta = new JsonApiMeta()
+                    .timestamp(LocalDateTime.now())
+                    .apiVersion("1.0.0");
+            
+            JsonApiResponse response = new JsonApiResponse()
+                    .data(resource)
+                    .links(links)
+                    .meta(meta);
+            
+            String jsonResponse = objectMapper.writeValueAsString(response);
             
             return ResponseEntity.ok()
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (Exception e) {
             logger.error("Error retrieving inventory {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            
+            // Error JSON:API estándar para error interno
+            JsonApiError error = new JsonApiError()
+                    .status("500")
+                    .code("INTERNAL_SERVER_ERROR")
+                    .title("Internal Server Error")
+                    .detail("An unexpected error occurred while retrieving the inventory");
+            
+            JsonApiResponse errorResponse = new JsonApiResponse().addError(error);
+            try {
+                String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body(jsonResponse);
+            } catch (Exception jsonException) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
         }
     }
 
