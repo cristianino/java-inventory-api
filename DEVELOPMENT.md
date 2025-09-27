@@ -125,6 +125,7 @@ Flyway migrations are located in `src/main/resources/db/migration/`:
 - `SPRING_DATASOURCE_PASSWORD` - Database password
 - `EXTERNAL_PRODUCTS_SERVICE_BASE_URL` - Products service URL
 - `PRODUCTS_API_KEY` - API key for products service
+- `APP_API_KEY` - API key for incoming requests authentication
 
 #### Profiles
 

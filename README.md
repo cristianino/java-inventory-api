@@ -87,6 +87,7 @@ docker-compose up --build
 - `SPRING_DATASOURCE_PASSWORD` - Database password
 - `EXTERNAL_PRODUCTS_SERVICE_BASE_URL` - Products service base URL
 - `PRODUCTS_API_KEY` - API key for products service authentication
+- `APP_API_KEY` - API key for incoming requests authentication
 
 ### Profiles
 

@@ -9,6 +9,7 @@ import com.inventory.infrastructure.adapter.rest.dto.InventoryDto;
 import com.inventory.infrastructure.adapter.rest.dto.UpdateQuantityRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/inventory")
 @Tag(name = "Inventory Management", description = "CRUD operations for inventory management")
+@SecurityRequirement(name = "X-API-Key")
 public class InventoryController {
     private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
     

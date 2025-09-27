@@ -9,6 +9,10 @@ external:
     base-url: ${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:http://host.docker.internal:8080}
     api-key: ${PRODUCTS_API_KEY:your-secret-api-key-here}
 
+app:
+  api:
+    key: ${APP_API_KEY:your-secret-api-key-here}
+
 logging:
   level:
     root: INFO

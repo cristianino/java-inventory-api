@@ -14,6 +14,11 @@ external:
     timeout: 1000
     max-retries: 1
 
+# Application API Security for tests
+app:
+  api:
+    key: test-app-api-key
+
 logging:
   level:
     com.inventory: DEBUG

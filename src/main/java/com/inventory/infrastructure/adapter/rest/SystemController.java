@@ -1,5 +1,7 @@
 package com.inventory.infrastructure.adapter.rest;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/system")
+@Tag(name = "System", description = "System utilities and connectivity tests")
+@SecurityRequirement(name = "X-API-Key")
 public class SystemController {
 
     private final WebClient webClient;
@@ -22,8 +26,8 @@ public class SystemController {
     private final String productsApiKey;
 
     public SystemController(WebClient.Builder webClientBuilder,
-                           @Value("${external.products.service.base-url}") String productApiBaseUrl,
-                           @Value("${products.api.key}") String productsApiKey) {
+                           @Value("${external.products-service.base-url}") String productApiBaseUrl,
+                           @Value("${external.products-service.api-key}") String productsApiKey) {
         this.webClient = webClientBuilder.build();
         this.productApiBaseUrl = productApiBaseUrl;
         this.productsApiKey = productsApiKey;
