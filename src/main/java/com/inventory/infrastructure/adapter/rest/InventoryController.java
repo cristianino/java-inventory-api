@@ -1,5 +1,6 @@
 package com.inventory.infrastructure.adapter.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jasminb.jsonapi.JSONAPIDocument;
 import com.github.jasminb.jsonapi.ResourceConverter;
 import com.inventory.application.usecase.*;
@@ -19,9 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,17 +35,20 @@ public class InventoryController {
     private final UpdateInventoryUseCase updateInventoryUseCase;
     private final DeleteInventoryUseCase deleteInventoryUseCase;
     private final ResourceConverter resourceConverter;
+    private final ObjectMapper objectMapper;
 
     public InventoryController(CreateInventoryUseCase createInventoryUseCase,
                               GetInventoryUseCase getInventoryUseCase,
                               UpdateInventoryUseCase updateInventoryUseCase,
                               DeleteInventoryUseCase deleteInventoryUseCase,
-                              ResourceConverter resourceConverter) {
+                              ResourceConverter resourceConverter,
+                              ObjectMapper objectMapper) {
         this.createInventoryUseCase = createInventoryUseCase;
         this.getInventoryUseCase = getInventoryUseCase;
         this.updateInventoryUseCase = updateInventoryUseCase;
         this.deleteInventoryUseCase = deleteInventoryUseCase;
         this.resourceConverter = resourceConverter;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = "application/vnd.api+json")
@@ -88,13 +90,38 @@ public class InventoryController {
                 inventories = getInventoryUseCase.findAll();
             }
             
+            if (inventories.isEmpty()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body("{\"data\":[]}");
+            }
+            
+            // Usar Jackson para crear JSON:API válido de forma más limpia
             List<InventoryDto> dtos = inventories.stream()
                     .map(this::toDto)
                     .collect(Collectors.toList());
             
-            JSONAPIDocument<List<InventoryDto>> document = new JSONAPIDocument<>(dtos);
-            byte[] jsonBytes = resourceConverter.writeDocument(document);
-            String jsonResponse = new String(jsonBytes);
+            // Crear estructura JSON:API manualmente con Jackson
+            Map<String, Object> jsonApiResponse = new HashMap<>();
+            List<Map<String, Object>> dataArray = new ArrayList<>();
+            
+            for (InventoryDto dto : dtos) {
+                Map<String, Object> resource = new HashMap<>();
+                resource.put("type", "inventory");
+                resource.put("id", dto.getId().toString());
+                
+                Map<String, Object> attributes = new HashMap<>();
+                attributes.put("productId", dto.getProductId());
+                attributes.put("quantity", dto.getQuantity());
+                attributes.put("createdAt", dto.getCreatedAt().toString());
+                attributes.put("updatedAt", dto.getUpdatedAt().toString());
+                
+                resource.put("attributes", attributes);
+                dataArray.add(resource);
+            }
+            
+            jsonApiResponse.put("data", dataArray);
+            String jsonResponse = objectMapper.writeValueAsString(jsonApiResponse);
             
             return ResponseEntity.ok()
                     .contentType(MediaType.valueOf("application/vnd.api+json"))

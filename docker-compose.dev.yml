@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Inventory API Service (Development)
   inventory-api-dev:
