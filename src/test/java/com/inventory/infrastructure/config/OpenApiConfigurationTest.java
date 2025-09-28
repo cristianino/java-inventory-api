@@ -41,7 +41,8 @@ class OpenApiConfigurationTest {
         Info info = openAPI.getInfo();
         assertThat(info).isNotNull();
         assertThat(info.getTitle()).isEqualTo("Java Inventory API");
-        assertThat(info.getDescription()).isEqualTo("Spring Boot 3 microservice for inventory management using Hexagonal Architecture");
+        assertThat(info.getDescription()).contains("Spring Boot 3 microservice for inventory management using Hexagonal Architecture");
+        assertThat(info.getDescription()).contains("API Versioning Strategy");
         assertThat(info.getVersion()).isEqualTo("v1.0.0");
     }
 

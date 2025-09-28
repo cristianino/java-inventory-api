@@ -1,5 +1,6 @@
 package com.inventory.infrastructure.adapter.rest.v1;
 
+import com.github.jasminb.jsonapi.ResourceConverter;
 import com.inventory.application.usecase.CreateInventoryUseCase;
 import com.inventory.application.usecase.DeleteInventoryUseCase;
 import com.inventory.application.usecase.GetInventoryUseCase;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(InventoryControllerV1.class)
+@WebMvcTest(controllers = InventoryControllerV1.class)
 @DisplayName("InventoryControllerV1 Integration Tests")
 class InventoryControllerV1Test {
 
@@ -48,12 +49,15 @@ class InventoryControllerV1Test {
     @MockBean
     private DeleteInventoryUseCase deleteInventoryUseCase;
 
+    @MockBean
+    private ResourceConverter resourceConverter;
+
     private Inventory sampleInventory;
     private CreateInventoryRequest createRequest;
     private UpdateQuantityRequest updateRequest;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         sampleInventory = new Inventory(
                 UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
                 "PROD-001",
@@ -68,6 +72,10 @@ class InventoryControllerV1Test {
 
         updateRequest = new UpdateQuantityRequest();
         updateRequest.setQuantity(150);
+
+        // Mock ResourceConverter to return valid JSON bytes
+        when(resourceConverter.writeDocument(any()))
+                .thenReturn("{\"data\":{\"type\":\"inventory\",\"id\":\"123e4567-e89b-12d3-a456-426614174000\",\"attributes\":{\"productId\":\"PROD-001\",\"quantity\":100,\"createdAt\":\"2023-01-01T12:00\",\"updatedAt\":\"2023-01-01T12:00\"}}}".getBytes());
     }
 
     @Test
