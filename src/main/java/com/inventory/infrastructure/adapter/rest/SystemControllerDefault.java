@@ -16,18 +16,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/system")
-@Tag(name = "System V1", description = "System utilities and connectivity tests - Version 1")
+@RequestMapping("/api/system")
+@Tag(name = "System (Default)", description = "System utilities and connectivity tests - Latest version (currently v1)")
 @SecurityRequirement(name = "X-API-Key")
-public class SystemController {
+public class SystemControllerDefault {
 
     private final WebClient webClient;
     private final String productApiBaseUrl;
     private final String productsApiKey;
 
-    public SystemController(WebClient.Builder webClientBuilder,
-                           @Value("${external.products-service.base-url}") String productApiBaseUrl,
-                           @Value("${external.products-service.api-key}") String productsApiKey) {
+    public SystemControllerDefault(WebClient.Builder webClientBuilder,
+                                  @Value("${external.products-service.base-url}") String productApiBaseUrl,
+                                  @Value("${external.products-service.api-key}") String productsApiKey) {
         this.webClient = webClientBuilder.build();
         this.productApiBaseUrl = productApiBaseUrl;
         this.productsApiKey = productsApiKey;

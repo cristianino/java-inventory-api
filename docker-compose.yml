@@ -6,15 +6,14 @@ services:
     ports:
       - "8082:8080"  # Puerto diferente para evitar conflicto con product-api
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://java-product-api-postgres-dev:5432/inventoryapi
-      - SPRING_DATASOURCE_USERNAME=dev
-      - SPRING_DATASOURCE_PASSWORD=devpass123
-      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=http://java-product-api-app-dev:8080
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-docker}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://java-product-api-postgres-dev:5432/inventoryapi}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-dev}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-devpass123}
+      - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:-http://java-product-api-app-dev:8080}
       - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
       - APP_API_KEY=${APP_API_KEY:-your-secret-api-key-here}
-    networks:
-      - dev-network  # Usando la misma red del product-api
+      - DATABASE_SEEDING_ENABLED=${DATABASE_SEEDING_ENABLED:-true}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
@@ -25,6 +24,6 @@ services:
 
 # Red externa que se conecta con la red del product-api
 networks:
-  dev-network:
+  default:
     external: true
-    name: java-product-api_dev-network
+    name: java-product-api_backend-net

@@ -13,4 +13,5 @@ public interface InventoryRepository {
     List<Inventory> findByQuantityLessThan(Integer threshold);
     boolean deleteById(UUID id);
     boolean deleteByProductId(String productId);
+    long count();
 }

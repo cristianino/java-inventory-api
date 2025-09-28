@@ -1,4 +1,4 @@
-package com.inventory.infrastructure.adapter.rest;
+package com.inventory.infrastructure.adapter.rest.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.jasminb.jsonapi.JSONAPIDocument;
@@ -24,11 +24,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/inventory")
-@Tag(name = "Inventory Management (Default)", description = "CRUD operations for inventory management - Latest version (currently v1)")
+@RequestMapping("/api/v1/inventory")
+@Tag(name = "Inventory Management V1", description = "CRUD operations for inventory management - Version 1")
 @SecurityRequirement(name = "X-API-Key")
-public class InventoryController {
-    private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
+public class InventoryControllerV1 {
+    private static final Logger logger = LoggerFactory.getLogger(InventoryControllerV1.class);
     
     private final CreateInventoryUseCase createInventoryUseCase;
     private final GetInventoryUseCase getInventoryUseCase;
@@ -37,12 +37,12 @@ public class InventoryController {
     private final ResourceConverter resourceConverter;
     private final ObjectMapper objectMapper;
 
-    public InventoryController(CreateInventoryUseCase createInventoryUseCase,
-                              GetInventoryUseCase getInventoryUseCase,
-                              UpdateInventoryUseCase updateInventoryUseCase,
-                              DeleteInventoryUseCase deleteInventoryUseCase,
-                              ResourceConverter resourceConverter,
-                              ObjectMapper objectMapper) {
+    public InventoryControllerV1(CreateInventoryUseCase createInventoryUseCase,
+                                GetInventoryUseCase getInventoryUseCase,
+                                UpdateInventoryUseCase updateInventoryUseCase,
+                                DeleteInventoryUseCase deleteInventoryUseCase,
+                                ResourceConverter resourceConverter,
+                                ObjectMapper objectMapper) {
         this.createInventoryUseCase = createInventoryUseCase;
         this.getInventoryUseCase = getInventoryUseCase;
         this.updateInventoryUseCase = updateInventoryUseCase;
@@ -54,14 +54,14 @@ public class InventoryController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = "application/vnd.api+json")
     @Operation(summary = "Create new inventory item", description = "Creates a new inventory item with validation")
     public ResponseEntity<String> createInventory(@Valid @RequestBody CreateInventoryRequest request) {
-        logger.info("Creating inventory for product: {} with quantity: {}", request.getProductId(), request.getQuantity());
+        logger.info("[V1] Creating inventory for product: {} with quantity: {}", request.getProductId(), request.getQuantity());
         try {
             Inventory inventory = createInventoryUseCase.execute(
                 request.getProductId(), 
                 request.getQuantity()
             );
             
-            logger.info("Successfully created inventory with ID: {} for product: {}", inventory.getId(), request.getProductId());
+            logger.info("[V1] Successfully created inventory with ID: {} for product: {}", inventory.getId(), request.getProductId());
             
             InventoryDto dto = toDto(inventory);
             JSONAPIDocument<InventoryDto> document = new JSONAPIDocument<>(dto);
@@ -70,7 +70,7 @@ public class InventoryController {
             
             return ResponseEntity.status(HttpStatus.CREATED).body(jsonResponse);
         } catch (Exception e) {
-            logger.error("Error creating inventory for product: {} - {}", request.getProductId(), e.getMessage(), e);
+            logger.error("[V1] Error creating inventory for product: {} - {}", request.getProductId(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"errors\":[{\"detail\":\"" + e.getMessage() + "\"}]}");
         }
     }
@@ -83,10 +83,10 @@ public class InventoryController {
         try {
             List<Inventory> inventories;
             if (lowStockThreshold != null) {
-                logger.info("Getting low stock inventory with threshold: {}", lowStockThreshold);
+                logger.info("[V1] Getting low stock inventory with threshold: {}", lowStockThreshold);
                 inventories = getInventoryUseCase.findLowStock(lowStockThreshold);
             } else {
-                logger.info("Getting all inventory entries");
+                logger.info("[V1] Getting all inventory entries");
                 inventories = getInventoryUseCase.findAll();
             }
             
@@ -116,7 +116,7 @@ public class InventoryController {
             
             // Crear links de navegación
             JsonApiLinks links = new JsonApiLinks()
-                    .self("/api/inventory" + (lowStockThreshold != null ? "?lowStockThreshold=" + lowStockThreshold : ""));
+                    .self("/api/v1/inventory" + (lowStockThreshold != null ? "?lowStockThreshold=" + lowStockThreshold : ""));
             
             // Crear respuesta JSON:API completa
             JsonApiResponse response = new JsonApiResponse()
@@ -130,8 +130,10 @@ public class InventoryController {
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (Exception e) {
-            logger.error("Error retrieving inventory: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("[V1] Error retrieving inventory: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
         }
     }
 
@@ -139,11 +141,11 @@ public class InventoryController {
     @Operation(summary = "Get inventory by ID", description = "Retrieves inventory entry by its ID")
     public ResponseEntity<String> getInventoryById(@PathVariable UUID id) {
         try {
-            logger.info("Getting inventory by ID: {}", id);
+            logger.info("[V1] Getting inventory by ID: {}", id);
             
             Optional<Inventory> inventory = getInventoryUseCase.findById(id);
             if (inventory.isEmpty()) {
-                logger.warn("Inventory not found: {}", id);
+                logger.warn("[V1] Inventory not found: {}", id);
                 
                 // Error JSON:API estándar para recurso no encontrado
                 JsonApiError error = new JsonApiError()
@@ -176,7 +178,7 @@ public class InventoryController {
             
             // Links para recurso individual
             JsonApiLinks links = new JsonApiLinks()
-                    .self("/api/inventory/" + id);
+                    .self("/api/v1/inventory/" + id);
             
             // Meta información
             JsonApiMeta meta = new JsonApiMeta()
@@ -194,7 +196,7 @@ public class InventoryController {
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (Exception e) {
-            logger.error("Error retrieving inventory {}: {}", id, e.getMessage(), e);
+            logger.error("[V1] Error retrieving inventory {}: {}", id, e.getMessage(), e);
             
             // Error JSON:API estándar para error interno
             JsonApiError error = new JsonApiError()
@@ -219,11 +221,11 @@ public class InventoryController {
     @Operation(summary = "Get inventory by product ID", description = "Retrieves inventory entry by product ID")
     public ResponseEntity<String> getInventoryByProductId(@PathVariable String productId) {
         try {
-            logger.info("Getting inventory by product ID: {}", productId);
+            logger.info("[V1] Getting inventory by product ID: {}", productId);
             
             Optional<Inventory> inventory = getInventoryUseCase.findByProductId(productId);
             if (inventory.isEmpty()) {
-                logger.warn("Inventory not found for product: {}", productId);
+                logger.warn("[V1] Inventory not found for product: {}", productId);
                 return ResponseEntity.notFound().build();
             }
             
@@ -236,8 +238,10 @@ public class InventoryController {
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (Exception e) {
-            logger.error("Error retrieving inventory for product {}: {}", productId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("[V1] Error retrieving inventory for product {}: {}", productId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
         }
     }
 
@@ -246,7 +250,7 @@ public class InventoryController {
     public ResponseEntity<String> updateQuantity(@PathVariable UUID id, 
                                                 @Valid @RequestBody UpdateQuantityRequest request) {
         try {
-            logger.info("Updating quantity for inventory {}: {}", id, request.getQuantity());
+            logger.info("[V1] Updating quantity for inventory {}: {}", id, request.getQuantity());
             
             Inventory inventory = updateInventoryUseCase.updateQuantity(id, request.getQuantity());
             InventoryDto dto = toDto(inventory);
@@ -255,16 +259,20 @@ public class InventoryController {
             byte[] jsonBytes = resourceConverter.writeDocument(document);
             String jsonResponse = new String(jsonBytes);
             
-            logger.info("Successfully updated inventory quantity: {}", id);
+            logger.info("[V1] Successfully updated inventory quantity: {}", id);
             return ResponseEntity.ok()
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid request for updating inventory {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            logger.warn("[V1] Invalid request for updating inventory {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Invalid request parameters\"}]}");
         } catch (Exception e) {
-            logger.error("Error updating inventory {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("[V1] Error updating inventory {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
         }
     }
 
@@ -273,7 +281,7 @@ public class InventoryController {
     public ResponseEntity<String> updateQuantityByProductId(@PathVariable String productId,
                                                            @Valid @RequestBody UpdateQuantityRequest request) {
         try {
-            logger.info("Updating quantity for product {}: {}", productId, request.getQuantity());
+            logger.info("[V1] Updating quantity for product {}: {}", productId, request.getQuantity());
             
             Inventory inventory = updateInventoryUseCase.updateQuantityByProductId(productId, request.getQuantity());
             InventoryDto dto = toDto(inventory);
@@ -282,39 +290,51 @@ public class InventoryController {
             byte[] jsonBytes = resourceConverter.writeDocument(document);
             String jsonResponse = new String(jsonBytes);
             
-            logger.info("Successfully updated inventory quantity for product: {}", productId);
+            logger.info("[V1] Successfully updated inventory quantity for product: {}", productId);
             return ResponseEntity.ok()
                     .contentType(MediaType.valueOf("application/vnd.api+json"))
                     .body(jsonResponse);
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid request for updating inventory for product {}: {}", productId, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            logger.warn("[V1] Invalid request for updating inventory for product {}: {}", productId, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Invalid request parameters\"}]}");
         } catch (Exception e) {
-            logger.error("Error updating inventory for product {}: {}", productId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("[V1] Error updating inventory for product {}: {}", productId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
         }
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete inventory entry", description = "Deletes an inventory entry by its ID")
-    public ResponseEntity<Void> deleteInventory(@PathVariable UUID id) {
+    public ResponseEntity<String> deleteInventory(@PathVariable UUID id) {
         try {
-            logger.info("Deleting inventory: {}", id);
+            logger.info("[V1] Deleting inventory: {}", id);
             
             boolean deleted = deleteInventoryUseCase.deleteById(id);
             if (deleted) {
-                logger.info("Successfully deleted inventory: {}", id);
-                return ResponseEntity.noContent().build();
+                logger.info("[V1] Successfully deleted inventory: {}", id);
+                return ResponseEntity.noContent()
+                        .header("Content-Type", "application/json")
+                        .build();
             } else {
-                logger.warn("Inventory not found for deletion: {}", id);
-                return ResponseEntity.notFound().build();
+                logger.warn("[V1] Inventory not found for deletion: {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header("Content-Type", "application/vnd.api+json")
+                        .body("{\"errors\":[{\"detail\":\"Inventory not found\"}]}");
             }
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid request for deleting inventory {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest().build();
+            logger.warn("[V1] Invalid request for deleting inventory {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Invalid request parameters\"}]}");
         } catch (Exception e) {
-            logger.error("Error deleting inventory {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("[V1] Error deleting inventory {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .header("Content-Type", "application/vnd.api+json")
+                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
         }
     }
 
@@ -322,21 +342,21 @@ public class InventoryController {
     @Operation(summary = "Delete inventory entry by product ID", description = "Deletes an inventory entry by product ID")
     public ResponseEntity<Void> deleteInventoryByProductId(@PathVariable String productId) {
         try {
-            logger.info("Deleting inventory for product: {}", productId);
+            logger.info("[V1] Deleting inventory for product: {}", productId);
             
             boolean deleted = deleteInventoryUseCase.deleteByProductId(productId);
             if (deleted) {
-                logger.info("Successfully deleted inventory for product: {}", productId);
+                logger.info("[V1] Successfully deleted inventory for product: {}", productId);
                 return ResponseEntity.noContent().build();
             } else {
-                logger.warn("Inventory not found for product deletion: {}", productId);
+                logger.warn("[V1] Inventory not found for product deletion: {}", productId);
                 return ResponseEntity.notFound().build();
             }
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid request for deleting inventory for product {}: {}", productId, e.getMessage());
+            logger.warn("[V1] Invalid request for deleting inventory for product {}: {}", productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Error deleting inventory for product {}: {}", productId, e.getMessage(), e);
+            logger.error("[V1] Error deleting inventory for product {}: {}", productId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
