@@ -105,6 +105,25 @@ class InventoryControllerTest {
                     .andExpect(content().contentType("application/vnd.api+json"));
         }
 
+        @Test
+        void shouldReturnNotFoundWhenProductInventoryDoesNotExist() throws Exception {
+            String productId = "NON-EXISTENT";
+            when(getInventoryUseCase.findByProductId(productId)).thenReturn(Optional.empty());
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
+
+            mockMvc.perform(get("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorWhenGetByProductIdFails() throws Exception {
+            String productId = "PROD-001";
+            when(getInventoryUseCase.findByProductId(productId)).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(get("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isInternalServerError());
+        }
+
         @Test 
         void shouldReturnLowStockInventory() throws Exception {
             List<Inventory> lowStockInventories = List.of(
@@ -146,6 +165,28 @@ class InventoryControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
         }
+
+        @Test
+        void shouldReturnBadRequestWhenCreateInventoryWithInvalidArgument() throws Exception {
+            CreateInventoryRequest request = new CreateInventoryRequest("PROD-001", 100);
+            when(createInventoryUseCase.execute(any(), any())).thenThrow(new IllegalArgumentException("Product already exists"));
+
+            mockMvc.perform(post("/api/inventory")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void shouldReturnBadRequestWhenCreateInventoryFails() throws Exception {
+            CreateInventoryRequest request = new CreateInventoryRequest("PROD-001", 100);
+            when(createInventoryUseCase.execute(any(), any())).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(post("/api/inventory")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Nested
@@ -168,6 +209,32 @@ class InventoryControllerTest {
         }
 
         @Test
+        void shouldReturnBadRequestWhenUpdateQuantityWithInvalidArgument() throws Exception {
+            UUID id = UUID.randomUUID();
+            UpdateQuantityRequest request = new UpdateQuantityRequest(150);
+            
+            when(updateInventoryUseCase.updateQuantity(id, 150)).thenThrow(new IllegalArgumentException("Invalid quantity"));
+
+            mockMvc.perform(put("/api/inventory/{id}/quantity", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorWhenUpdateQuantityFails() throws Exception {
+            UUID id = UUID.randomUUID();
+            UpdateQuantityRequest request = new UpdateQuantityRequest(150);
+            
+            when(updateInventoryUseCase.updateQuantity(id, 150)).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(put("/api/inventory/{id}/quantity", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
         void shouldUpdateQuantityByProductIdSuccessfully() throws Exception {
             String productId = "PROD-001";
             UpdateQuantityRequest request = new UpdateQuantityRequest(150);
@@ -181,6 +248,32 @@ class InventoryControllerTest {
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/vnd.api+json"));
+        }
+
+        @Test
+        void shouldReturnBadRequestWhenUpdateQuantityByProductIdWithInvalidArgument() throws Exception {
+            String productId = "PROD-001";
+            UpdateQuantityRequest request = new UpdateQuantityRequest(150);
+            
+            when(updateInventoryUseCase.updateQuantityByProductId(productId, 150)).thenThrow(new IllegalArgumentException("Invalid product ID"));
+
+            mockMvc.perform(put("/api/inventory/product/{productId}/quantity", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorWhenUpdateQuantityByProductIdFails() throws Exception {
+            String productId = "PROD-001";
+            UpdateQuantityRequest request = new UpdateQuantityRequest(150);
+            
+            when(updateInventoryUseCase.updateQuantityByProductId(productId, 150)).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(put("/api/inventory/product/{productId}/quantity", productId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isInternalServerError());
         }
     }
 
@@ -197,12 +290,66 @@ class InventoryControllerTest {
         }
 
         @Test
+        void shouldReturnNotFoundWhenDeleteInventoryNotExists() throws Exception {
+            UUID id = UUID.randomUUID();
+            when(deleteInventoryUseCase.deleteById(id)).thenReturn(false);
+
+            mockMvc.perform(delete("/api/inventory/{id}", id))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturnBadRequestWhenDeleteInventoryWithInvalidArgument() throws Exception {
+            UUID id = UUID.randomUUID();
+            when(deleteInventoryUseCase.deleteById(id)).thenThrow(new IllegalArgumentException("Invalid ID"));
+
+            mockMvc.perform(delete("/api/inventory/{id}", id))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorWhenDeleteInventoryFails() throws Exception {
+            UUID id = UUID.randomUUID();
+            when(deleteInventoryUseCase.deleteById(id)).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(delete("/api/inventory/{id}", id))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
         void shouldDeleteInventoryByProductIdSuccessfully() throws Exception {
             String productId = "PROD-001";
             when(deleteInventoryUseCase.deleteByProductId(productId)).thenReturn(true);
 
             mockMvc.perform(delete("/api/inventory/product/{productId}", productId))
                     .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void shouldReturnNotFoundWhenDeleteInventoryByProductIdNotExists() throws Exception {
+            String productId = "NON-EXISTENT";
+            when(deleteInventoryUseCase.deleteByProductId(productId)).thenReturn(false);
+
+            mockMvc.perform(delete("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturnBadRequestWhenDeleteInventoryByProductIdWithInvalidArgument() throws Exception {
+            String productId = "PROD-001";
+            when(deleteInventoryUseCase.deleteByProductId(productId)).thenThrow(new IllegalArgumentException("Invalid product ID"));
+
+            mockMvc.perform(delete("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void shouldReturnInternalServerErrorWhenDeleteInventoryByProductIdFails() throws Exception {
+            String productId = "PROD-001";
+            when(deleteInventoryUseCase.deleteByProductId(productId)).thenThrow(new RuntimeException("Database error"));
+
+            mockMvc.perform(delete("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isInternalServerError());
         }
     }
 }

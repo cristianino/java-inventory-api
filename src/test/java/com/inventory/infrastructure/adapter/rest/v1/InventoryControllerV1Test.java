@@ -231,4 +231,195 @@ class InventoryControllerV1Test {
 
         verify(getInventoryUseCase).findLowStock(50);
     }
+
+    // Error handling tests
+    @Test
+    @DisplayName("Should return 400 when create inventory fails with IllegalArgumentException")
+    void shouldReturnBadRequestWhenCreateInventoryWithInvalidArgument() throws Exception {
+        // Given
+        when(createInventoryUseCase.execute(eq("PROD-001"), eq(100)))
+                .thenThrow(new IllegalArgumentException("Product already exists"));
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/inventory")
+                        .header("X-API-Key", "test-api-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(createInventoryUseCase).execute("PROD-001", 100);
+    }
+
+    @Test
+    @DisplayName("Should return 400 when create inventory fails with RuntimeException")
+    void shouldReturnBadRequestWhenCreateInventoryFails() throws Exception {
+        // Given
+        when(createInventoryUseCase.execute(eq("PROD-001"), eq(100)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/inventory")
+                        .header("X-API-Key", "test-api-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(createInventoryUseCase).execute("PROD-001", 100);
+    }
+
+    @Test
+    @DisplayName("Should return 500 when get inventory by ID fails")
+    void shouldReturnInternalServerErrorWhenGetInventoryByIdFails() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(getInventoryUseCase.findById(inventoryId))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/inventory/{id}", inventoryId)
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(getInventoryUseCase).findById(inventoryId);
+    }
+
+    @Test
+    @DisplayName("Should return 500 when get inventory by product ID fails")
+    void shouldReturnInternalServerErrorWhenGetByProductIdFails() throws Exception {
+        // Given
+        when(getInventoryUseCase.findByProductId("PROD-001"))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/inventory/product/{productId}", "PROD-001")
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(getInventoryUseCase).findByProductId("PROD-001");
+    }
+
+    @Test
+    @DisplayName("Should return 400 when update quantity with IllegalArgumentException")
+    void shouldReturnBadRequestWhenUpdateQuantityWithInvalidArgument() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(updateInventoryUseCase.updateQuantity(inventoryId, 150))
+                .thenThrow(new IllegalArgumentException("Invalid quantity"));
+
+        // When & Then
+        mockMvc.perform(put("/api/v1/inventory/{id}/quantity", inventoryId)
+                        .header("X-API-Key", "test-api-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(updateInventoryUseCase).updateQuantity(inventoryId, 150);
+    }
+
+    @Test
+    @DisplayName("Should return 500 when update quantity fails")
+    void shouldReturnInternalServerErrorWhenUpdateQuantityFails() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(updateInventoryUseCase.updateQuantity(inventoryId, 150))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(put("/api/v1/inventory/{id}/quantity", inventoryId)
+                        .header("X-API-Key", "test-api-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(updateInventoryUseCase).updateQuantity(inventoryId, 150);
+    }
+
+    @Test
+    @DisplayName("Should return 400 when delete inventory with IllegalArgumentException")
+    void shouldReturnBadRequestWhenDeleteInventoryWithInvalidArgument() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(deleteInventoryUseCase.deleteById(inventoryId))
+                .thenThrow(new IllegalArgumentException("Invalid ID"));
+
+        // When & Then
+        mockMvc.perform(delete("/api/v1/inventory/{id}", inventoryId)
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(deleteInventoryUseCase).deleteById(inventoryId);
+    }
+
+    @Test
+    @DisplayName("Should return 404 when delete inventory not found")
+    void shouldReturnNotFoundWhenDeleteInventoryNotFound() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(deleteInventoryUseCase.deleteById(inventoryId))
+                .thenReturn(false);
+
+        // When & Then
+        mockMvc.perform(delete("/api/v1/inventory/{id}", inventoryId)
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(deleteInventoryUseCase).deleteById(inventoryId);
+    }
+
+    @Test
+    @DisplayName("Should return 500 when delete inventory fails")
+    void shouldReturnInternalServerErrorWhenDeleteInventoryFails() throws Exception {
+        // Given
+        UUID inventoryId = sampleInventory.getId();
+        when(deleteInventoryUseCase.deleteById(inventoryId))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(delete("/api/v1/inventory/{id}", inventoryId)
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(deleteInventoryUseCase).deleteById(inventoryId);
+    }
+
+    @Test
+    @DisplayName("Should return 500 when get all inventory fails")
+    void shouldReturnInternalServerErrorWhenGetAllInventoryFails() throws Exception {
+        // Given
+        when(getInventoryUseCase.findAll())
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/inventory")
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(getInventoryUseCase).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return 500 when get low stock inventory fails")
+    void shouldReturnInternalServerErrorWhenGetLowStockInventoryFails() throws Exception {
+        // Given
+        when(getInventoryUseCase.findLowStock(50))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/inventory?lowStockThreshold=50")
+                        .header("X-API-Key", "test-api-key"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType("application/vnd.api+json"));
+
+        verify(getInventoryUseCase).findLowStock(50);
+    }
 }

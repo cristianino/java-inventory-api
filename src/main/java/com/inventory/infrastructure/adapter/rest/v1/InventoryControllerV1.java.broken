@@ -131,9 +131,25 @@ public class InventoryControllerV1 {
                     .body(jsonResponse);
         } catch (Exception e) {
             logger.error("[V1] Error retrieving inventory: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header("Content-Type", "application/vnd.api+json")
-                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
+            
+            // Error JSON:API estándar para error interno
+            JsonApiError error = new JsonApiError()
+                    .status("500")
+                    .code("INTERNAL_SERVER_ERROR")
+                    .title("Internal Server Error")
+                    .detail("An unexpected error occurred while retrieving inventory");
+            
+            JsonApiResponse errorResponse = new JsonApiResponse().addError(error);
+            try {
+                String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body(jsonResponse);
+            } catch (Exception jsonException) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
+            }
         }
     }
 
@@ -226,7 +242,9 @@ public class InventoryControllerV1 {
             Optional<Inventory> inventory = getInventoryUseCase.findByProductId(productId);
             if (inventory.isEmpty()) {
                 logger.warn("[V1] Inventory not found for product: {}", productId);
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .header("Content-Type", "application/vnd.api+json")
+                        .body("{\"errors\":[{\"detail\":\"Inventory not found for product\"}]}");
             }
             
             InventoryDto dto = toDto(inventory.get());
@@ -239,9 +257,25 @@ public class InventoryControllerV1 {
                     .body(jsonResponse);
         } catch (Exception e) {
             logger.error("[V1] Error retrieving inventory for product {}: {}", productId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header("Content-Type", "application/vnd.api+json")
-                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
+            
+            // Error JSON:API estándar para error interno
+            JsonApiError error = new JsonApiError()
+                    .status("500")
+                    .code("INTERNAL_SERVER_ERROR")
+                    .title("Internal Server Error")
+                    .detail("An unexpected error occurred while retrieving inventory for product");
+            
+            JsonApiResponse errorResponse = new JsonApiResponse().addError(error);
+            try {
+                String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body(jsonResponse);
+            } catch (Exception jsonException) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .contentType(MediaType.valueOf("application/vnd.api+json"))
+                        .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
+            }
         }
     }
 
@@ -265,14 +299,10 @@ public class InventoryControllerV1 {
                     .body(jsonResponse);
         } catch (IllegalArgumentException e) {
             logger.warn("[V1] Invalid request for updating inventory {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest()
-                    .header("Content-Type", "application/vnd.api+json")
-                    .body("{\"errors\":[{\"detail\":\"Invalid request parameters\"}]}");
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             logger.error("[V1] Error updating inventory {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .header("Content-Type", "application/vnd.api+json")
-                    .body("{\"errors\":[{\"detail\":\"Database error\"}]}");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
