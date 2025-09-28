@@ -1,15 +1,21 @@
 spring:
-  profiles:
-    active: docker
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/inventory_db}
     username: ${SPRING_DATASOURCE_USERNAME:inventory_user}
     password: ${SPRING_DATASOURCE_PASSWORD:inventory_pass}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
 
 external:
   products-service:
-    base-url: ${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:http://products-service:8081}
-    api-key: ${PRODUCTS_API_KEY:default-api-key}
+    base-url: ${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:http://host.docker.internal:8080}
+    api-key: ${PRODUCTS_API_KEY:your-secret-api-key-here}
+
+app:
+  api:
+    key: ${APP_API_KEY:your-secret-api-key-here}
 
 logging:
   level:

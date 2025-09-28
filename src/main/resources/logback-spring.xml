@@ -2,6 +2,23 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     
+    <!-- Loki Appender Configuration -->
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>http://java-product-api-loki-dev:3100/loki/api/v1/push</url>
+        </http>
+        <format>
+            <label>
+                <pattern>application=java-inventory-api,host=${HOSTNAME:-localhost},level=%level</pattern>
+                <readMarkers>true</readMarkers>
+            </label>
+            <message>
+                <pattern>%date %level [%thread] %logger{36} [%file:%line] %msg%n</pattern>
+            </message>
+            <sortByTime>true</sortByTime>
+        </format>
+    </appender>
+    
     <springProfile name="!prod">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
@@ -10,6 +27,7 @@
         </appender>
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
     
@@ -29,6 +47,7 @@
         </appender>
         <root level="INFO">
             <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
 </configuration>

@@ -1,27 +1,22 @@
 # Multi-stage build for Java 17 Spring Boot application
-FROM openjdk:17-jdk-slim as builder
+FROM maven:3.9.5-amazoncorretto-17 AS builder
 
 WORKDIR /app
 
 # Copy maven files for dependency caching
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-
-# Make mvnw executable
-RUN chmod +x mvnw
 
 # Install dependencies
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 

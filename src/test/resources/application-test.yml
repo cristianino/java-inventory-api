@@ -1,20 +1,33 @@
-spring:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-  flyway:
-    enabled: false
-  
-# External service mocking
-external:
-  products-service:
-    base-url: http://localhost:8081
-    api-key: test-api-key
-    timeout: 1000
-    max-retries: 1
-
 logging:
   level:
     com.inventory: DEBUG
     org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+
+# Disable Loki for tests
+loki4j:
+  enabled: false
+
+# Use in-memory H2 database for tests  
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  h2:
+    console:
+      enabled: true
+
+# Disable external service calls in tests
+product:
+  service:
+    enabled: false
+
+# Test server configuration
+server:
+  port: 0
