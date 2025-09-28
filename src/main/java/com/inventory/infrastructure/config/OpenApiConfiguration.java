@@ -42,7 +42,7 @@ public class OpenApiConfiguration {
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Development Server"),
+                        new Server().url("http://localhost:8082").description("Development Server"),
                         new Server().url("https://api.inventory.example.com").description("Production Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().addList(API_KEY_SECURITY_SCHEME))
