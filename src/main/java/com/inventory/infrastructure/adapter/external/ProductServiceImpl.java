@@ -44,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
             logger.info("Fetching product with ID: {}", productId);
             
             ProductApiResponse response = webClient.get()
-                    .uri("/api/products/{id}", productId)
+                    .uri("/api/v1/products/{id}", productId)
                     .header("X-API-Key", apiKey)
                     .retrieve()
                     .bodyToMono(ProductApiResponse.class)
@@ -88,7 +88,7 @@ public class ProductServiceImpl implements ProductService {
             logger.info("Checking if product exists: {}", productId);
             
             webClient.head()
-                    .uri("/api/products/{id}", productId)
+                    .uri("/api/v1/products/{id}", productId)
                     .header("X-API-Key", apiKey)
                     .retrieve()
                     .toBodilessEntity()
