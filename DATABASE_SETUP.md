@@ -41,8 +41,9 @@ Expected output should show a running PostgreSQL container named `postgres-db`.
 
 **This step must be completed before starting the inventory API:**
 
+Since this project uses the existing PostgreSQL database from the `java-product-api` project, simply run:
+
 ```bash
-# Connect to PostgreSQL and create the database
 docker exec -it postgres-db psql -U productuser -d postgres -c "CREATE DATABASE inventoryapi;"
 ```
 
@@ -50,6 +51,8 @@ docker exec -it postgres-db psql -U productuser -d postgres -c "CREATE DATABASE 
 ```
 CREATE DATABASE
 ```
+
+> **Note**: This connects to the existing `postgres-db` container using the `productuser` credentials that are already configured in the product-api stack.
 
 ### Step 3: Verify Database Creation
 

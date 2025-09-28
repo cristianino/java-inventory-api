@@ -66,22 +66,7 @@ Please follow the detailed instructions in [DATABASE_SETUP.md](DATABASE_SETUP.md
 
 ### Quick Start
 
-#### Option 1: Use Setup Scripts
-
-**For Linux/Mac:**
-```bash
-chmod +x setup-database.sh
-./setup-database.sh
-docker-compose up --build -d
-```
-
-**For Windows (PowerShell):**
-```powershell
-.\setup-database.ps1
-docker-compose up --build -d
-```
-
-#### Option 2: Manual Setup
+#### Setup Steps
 
 1. **Create the database** (required only once):
 ```bash
