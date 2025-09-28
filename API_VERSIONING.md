@@ -1,102 +1,102 @@
 # API Versioning Strategy
 
-Este documento describe la estrategia de versionado implementada en la Java Inventory API.
+This document describes the versioning strategy implemented in the Java Inventory API.
 
-## Estrategia Implementada
+## Implemented Strategy
 
-### Versionado por URL Path
+### URL Path Versioning
 
-La API utiliza versionado por URL path con dos tipos de endpoints:
+The API uses URL path versioning with two types of endpoints:
 
-1. **Endpoints Default (sin versión)**: Siempre apuntan a la versión más actual
-2. **Endpoints Versionados**: Versiones específicas que mantienen compatibilidad hacia atrás
+1. **Default Endpoints (unversioned)**: Always point to the current latest version
+2. **Versioned Endpoints**: Specific versions that maintain backward compatibility
 
-### Estructura de URLs
+### URL Structure
 
-#### Versión Default (Latest)
+#### Default Version (Latest)
 ```
-GET /api/inventory           # Siempre apunta a la versión más actual (actualmente v1)
-GET /api/system             # Siempre apunta a la versión más actual (actualmente v1)
-```
-
-#### Versión Específica V1
-```
-GET /api/v1/inventory       # Versión específica v1
-GET /api/v1/system         # Versión específica v1
+GET /api/inventory           # Always points to the latest version (currently v1)
+GET /api/system             # Always points to the latest version (currently v1)
 ```
 
-## Endpoints Disponibles
+#### Specific Version V1
+```
+GET /api/v1/inventory       # Specific v1 version
+GET /api/v1/system         # Specific v1 version
+```
+
+## Available Endpoints
 
 ### Inventory Management
 
-| Método | Default Endpoint | V1 Endpoint | Descripción |
+| Method | Default Endpoint | V1 Endpoint | Description |
 |--------|------------------|-------------|-------------|
-| POST | `/api/inventory` | `/api/v1/inventory` | Crear nuevo inventario |
-| GET | `/api/inventory` | `/api/v1/inventory` | Obtener todos los inventarios |
-| GET | `/api/inventory/{id}` | `/api/v1/inventory/{id}` | Obtener inventario por ID |
-| GET | `/api/inventory/product/{productId}` | `/api/v1/inventory/product/{productId}` | Obtener inventario por Product ID |
-| PUT | `/api/inventory/{id}/quantity` | `/api/v1/inventory/{id}/quantity` | Actualizar cantidad por ID |
-| PUT | `/api/inventory/product/{productId}/quantity` | `/api/v1/inventory/product/{productId}/quantity` | Actualizar cantidad por Product ID |
-| DELETE | `/api/inventory/{id}` | `/api/v1/inventory/{id}` | Eliminar inventario por ID |
-| DELETE | `/api/inventory/product/{productId}` | `/api/v1/inventory/product/{productId}` | Eliminar inventario por Product ID |
+| POST | `/api/inventory` | `/api/v1/inventory` | Create new inventory |
+| GET | `/api/inventory` | `/api/v1/inventory` | Get all inventories |
+| GET | `/api/inventory/{id}` | `/api/v1/inventory/{id}` | Get inventory by ID |
+| GET | `/api/inventory/product/{productId}` | `/api/v1/inventory/product/{productId}` | Get inventory by Product ID |
+| PUT | `/api/inventory/{id}/quantity` | `/api/v1/inventory/{id}/quantity` | Update quantity by ID |
+| PUT | `/api/inventory/product/{productId}/quantity` | `/api/v1/inventory/product/{productId}/quantity` | Update quantity by Product ID |
+| DELETE | `/api/inventory/{id}` | `/api/v1/inventory/{id}` | Delete inventory by ID |
+| DELETE | `/api/inventory/product/{productId}` | `/api/v1/inventory/product/{productId}` | Delete inventory by Product ID |
 
 ### System Utilities
 
-| Método | Default Endpoint | V1 Endpoint | Descripción |
+| Method | Default Endpoint | V1 Endpoint | Description |
 |--------|------------------|-------------|-------------|
-| GET | `/api/system/connectivity-test` | `/api/v1/system/connectivity-test` | Test de conectividad |
-| GET | `/api/system/info` | `/api/v1/system/info` | Información del sistema |
+| GET | `/api/system/connectivity-test` | `/api/v1/system/connectivity-test` | Connectivity test |
+| GET | `/api/system/info` | `/api/v1/system/info` | System information |
 
-## Implementación Técnica
+## Technical Implementation
 
-### Controladores
+### Controllers
 
 #### Default Controllers
-- `InventoryController`: Maneja `/api/inventory/*`
-- `SystemControllerDefault`: Maneja `/api/system/*`
+- `InventoryController`: Handles `/api/inventory/*`
+- `SystemControllerDefault`: Handles `/api/system/*`
 
 #### V1 Controllers  
-- `InventoryControllerV1`: Maneja `/api/v1/inventory/*`
-- `SystemController`: Maneja `/api/v1/system/*`
+- `InventoryControllerV1`: Handles `/api/v1/inventory/*`
+- `SystemController`: Handles `/api/v1/system/*`
 
 ### Swagger/OpenAPI
 
-La documentación de Swagger muestra ambas versiones con tags diferenciados:
+Swagger documentation shows both versions with differentiated tags:
 
-- **"Inventory Management (Default)"**: Endpoints sin versión
-- **"Inventory Management V1"**: Endpoints versionados v1
-- **"System (Default)"**: Endpoints del sistema sin versión
-- **"System V1"**: Endpoints del sistema versionados v1
+- **"Inventory Management (Default)"**: Unversioned endpoints
+- **"Inventory Management V1"**: V1 versioned endpoints
+- **"System (Default)"**: System endpoints without version
+- **"System V1"**: V1 versioned system endpoints
 
-## Ventajas de esta Estrategia
+## Advantages of This Strategy
 
-1. **Flexibilidad**: Los clientes pueden usar la versión default para obtener siempre la última versión
-2. **Estabilidad**: Los clientes que necesiten estabilidad pueden usar endpoints versionados específicos
-3. **Compatibilidad hacia atrás**: Las versiones específicas se mantienen sin cambios
-4. **Fácil migración**: Los clientes pueden migrar gradualmente de versiones específicas a default
+1. **Flexibility**: Clients can use default version to always get the latest version
+2. **Stability**: Clients needing stability can use specific versioned endpoints
+3. **Backward Compatibility**: Specific versions remain unchanged
+4. **Easy Migration**: Clients can gradually migrate from specific versions to default
 
-## Flujo de Versionado Futuro
+## Future Versioning Workflow
 
-### Para V2:
+### For V2:
 
-1. Crear controladores V2:
-   - `InventoryControllerV2` en `/api/v2/inventory/*`
-   - `SystemControllerV2` en `/api/v2/system/*`
+1. Create V2 controllers:
+   - `InventoryControllerV2` at `/api/v2/inventory/*`
+   - `SystemControllerV2` at `/api/v2/system/*`
 
-2. Actualizar controladores default para apuntar a V2
+2. Update default controllers to point to V2
 
-3. Mantener V1 para compatibilidad hacia atrás
+3. Maintain V1 for backward compatibility
 
-### Deprecación de Versiones
+### Version Deprecation
 
-1. Marcar la versión como deprecated en Swagger
-2. Añadir headers de deprecación en las respuestas
-3. Notificar a los clientes con tiempo suficiente
-4. Remover la versión después del período de gracia
+1. Mark version as deprecated in Swagger
+2. Add deprecation headers in responses
+3. Notify clients with sufficient time
+4. Remove version after grace period
 
-## Headers de Respuesta
+## Response Headers
 
-Todas las respuestas incluyen información de versión:
+All responses include version information:
 
 ```json
 {
@@ -107,21 +107,21 @@ Todas las respuestas incluyen información de versión:
 }
 ```
 
-## Autenticación
+## Authentication
 
-Todas las versiones requieren el mismo método de autenticación:
+All versions require the same authentication method:
 - Header: `X-API-Key`
-- Valor: `your-secret-api-key-here` (para testing)
+- Value: `your-secret-api-key-here` (for testing)
 
 ## Testing
 
-Los tests están organizados por versión:
-- `/test/.../rest/InventoryControllerTest.java` - Tests para version default
-- `/test/.../rest/v1/InventoryControllerV1Test.java` - Tests para version v1
+Tests are organized by version:
+- `/test/.../rest/InventoryControllerTest.java` - Tests for default version
+- `/test/.../rest/v1/InventoryControllerV1Test.java` - Tests for v1 version
 
-## Consideraciones
+## Considerations
 
-1. **Mantenimiento**: Cada versión requiere mantenimiento separado
-2. **Documentación**: Swagger debe reflejar claramente las diferencias entre versiones
-3. **Monitoreo**: Trackear el uso de cada versión para planificar deprecaciones
-4. **Performance**: Los endpoints default tienen una pequeña sobrecarga de redirección lógica
+1. **Maintenance**: Each version requires separate maintenance
+2. **Documentation**: Swagger should clearly reflect differences between versions
+3. **Monitoring**: Track usage of each version to plan deprecations
+4. **Performance**: Default endpoints have a small logical redirection overhead
