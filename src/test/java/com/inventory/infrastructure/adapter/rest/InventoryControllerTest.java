@@ -1,5 +1,6 @@
 package com.inventory.infrastructure.adapter.rest;
 
+import com.github.jasminb.jsonapi.ResourceConverter;
 import com.inventory.application.usecase.*;
 import com.inventory.domain.model.Inventory;
 import com.inventory.infrastructure.adapter.rest.dto.CreateInventoryRequest;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(InventoryController.class)
+@WebMvcTest(controllers = InventoryController.class)
 @ActiveProfiles("test")
 class InventoryControllerTest {
 
@@ -46,6 +47,13 @@ class InventoryControllerTest {
     @MockBean
     private DeleteInventoryUseCase deleteInventoryUseCase;
 
+    @MockBean
+    private ResourceConverter resourceConverter;
+
+    private Inventory createSampleInventory(String productId, Integer quantity) {
+        return new Inventory(UUID.randomUUID(), productId, quantity, LocalDateTime.now(), LocalDateTime.now());
+    }
+
     @Nested
     class GetInventoryTests {
         
@@ -56,8 +64,9 @@ class InventoryControllerTest {
                 createSampleInventory("PROD-002", 50)
             );
             when(getInventoryUseCase.findAll()).thenReturn(inventories);
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(get("/api/inventories"))
+            mockMvc.perform(get("/api/inventory"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/vnd.api+json"));
         }
@@ -67,8 +76,9 @@ class InventoryControllerTest {
             UUID id = UUID.randomUUID();
             Inventory inventory = createSampleInventory("PROD-001", 100);
             when(getInventoryUseCase.findById(id)).thenReturn(Optional.of(inventory));
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(get("/api/inventories/{id}", id))
+            mockMvc.perform(get("/api/inventory/{id}", id))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/vnd.api+json"));
         }
@@ -77,8 +87,9 @@ class InventoryControllerTest {
         void shouldReturnNotFoundWhenInventoryDoesNotExist() throws Exception {
             UUID id = UUID.randomUUID();
             when(getInventoryUseCase.findById(id)).thenReturn(Optional.empty());
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(get("/api/inventories/{id}", id))
+            mockMvc.perform(get("/api/inventory/{id}", id))
                     .andExpect(status().isNotFound());
         }
 
@@ -87,8 +98,9 @@ class InventoryControllerTest {
             String productId = "PROD-001";
             Inventory inventory = createSampleInventory(productId, 100);
             when(getInventoryUseCase.findByProductId(productId)).thenReturn(Optional.of(inventory));
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(get("/api/inventories/product/{productId}", productId))
+            mockMvc.perform(get("/api/inventory/product/{productId}", productId))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/vnd.api+json"));
         }
@@ -99,8 +111,9 @@ class InventoryControllerTest {
                 createSampleInventory("PROD-003", 5)
             );
             when(getInventoryUseCase.findLowStock(10)).thenReturn(lowStockInventories);
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(get("/api/inventories?threshold=10"))
+            mockMvc.perform(get("/api/inventory?lowStockThreshold=10"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType("application/vnd.api+json"));
         }
@@ -115,8 +128,9 @@ class InventoryControllerTest {
             Inventory createdInventory = createSampleInventory("PROD-001", 100);
             
             when(createInventoryUseCase.execute(any(), any())).thenReturn(createdInventory);
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(post("/api/inventories")
+            mockMvc.perform(post("/api/inventory")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -125,18 +139,18 @@ class InventoryControllerTest {
 
         @Test
         void shouldReturnBadRequestForInvalidRequest() throws Exception {
-            CreateInventoryRequest invalidRequest = new CreateInventoryRequest(null, -1);
+            CreateInventoryRequest request = new CreateInventoryRequest(null, -1);
 
-            mockMvc.perform(post("/api/inventories")
+            mockMvc.perform(post("/api/inventory")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(invalidRequest)))
+                    .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
         }
     }
 
     @Nested
     class UpdateInventoryTests {
-        
+
         @Test
         void shouldUpdateQuantitySuccessfully() throws Exception {
             UUID id = UUID.randomUUID();
@@ -144,8 +158,9 @@ class InventoryControllerTest {
             Inventory updatedInventory = createSampleInventory("PROD-001", 150);
             
             when(updateInventoryUseCase.updateQuantity(id, 150)).thenReturn(updatedInventory);
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(put("/api/inventories/{id}/quantity", id)
+            mockMvc.perform(put("/api/inventory/{id}/quantity", id)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -153,29 +168,15 @@ class InventoryControllerTest {
         }
 
         @Test
-        void shouldIncrementQuantitySuccessfully() throws Exception {
-            UUID id = UUID.randomUUID();
-            UpdateQuantityRequest request = new UpdateQuantityRequest(50);
-            Inventory updatedInventory = createSampleInventory("PROD-001", 150);
+        void shouldUpdateQuantityByProductIdSuccessfully() throws Exception {
+            String productId = "PROD-001";
+            UpdateQuantityRequest request = new UpdateQuantityRequest(150);
+            Inventory updatedInventory = createSampleInventory(productId, 150);
             
-            when(updateInventoryUseCase.incrementQuantity(id, 50)).thenReturn(updatedInventory);
+            when(updateInventoryUseCase.updateQuantityByProductId(productId, 150)).thenReturn(updatedInventory);
+            when(resourceConverter.writeDocument(any())).thenReturn("{}".getBytes());
 
-            mockMvc.perform(patch("/api/inventories/{id}/increment", id)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType("application/vnd.api+json"));
-        }
-
-        @Test
-        void shouldDecrementQuantitySuccessfully() throws Exception {
-            UUID id = UUID.randomUUID();
-            UpdateQuantityRequest request = new UpdateQuantityRequest(25);
-            Inventory updatedInventory = createSampleInventory("PROD-001", 75);
-            
-            when(updateInventoryUseCase.decrementQuantity(id, 25)).thenReturn(updatedInventory);
-
-            mockMvc.perform(patch("/api/inventories/{id}/decrement", id)
+            mockMvc.perform(put("/api/inventory/product/{productId}/quantity", productId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -185,23 +186,23 @@ class InventoryControllerTest {
 
     @Nested
     class DeleteInventoryTests {
-        
+
         @Test
         void shouldDeleteInventorySuccessfully() throws Exception {
             UUID id = UUID.randomUUID();
+            when(deleteInventoryUseCase.deleteById(id)).thenReturn(true);
 
-            mockMvc.perform(delete("/api/inventories/{id}", id))
+            mockMvc.perform(delete("/api/inventory/{id}", id))
                     .andExpect(status().isNoContent());
         }
-    }
 
-    private Inventory createSampleInventory(String productId, Integer quantity) {
-        return new Inventory(
-            UUID.randomUUID(),
-            productId,
-            quantity,
-            LocalDateTime.now(),
-            LocalDateTime.now()
-        );
+        @Test
+        void shouldDeleteInventoryByProductIdSuccessfully() throws Exception {
+            String productId = "PROD-001";
+            when(deleteInventoryUseCase.deleteByProductId(productId)).thenReturn(true);
+
+            mockMvc.perform(delete("/api/inventory/product/{productId}", productId))
+                    .andExpect(status().isNoContent());
+        }
     }
 }
