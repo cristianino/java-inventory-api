@@ -53,6 +53,54 @@ Spring Boot 3 microservice for inventory management using Hexagonal Architecture
 - Java 17+
 - Docker and Docker Compose
 - Maven 3.6+
+- PostgreSQL container running (from product-api stack)
+
+### 🚨 Critical First-Time Setup
+
+**⚠️ IMPORTANT: Database must be created manually before first startup!**
+
+Please follow the detailed instructions in [DATABASE_SETUP.md](DATABASE_SETUP.md) for:
+- Database creation requirements
+- Automatic data seeding process
+- Troubleshooting common issues
+
+### Quick Start
+
+#### Option 1: Use Setup Scripts
+
+**For Linux/Mac:**
+```bash
+chmod +x setup-database.sh
+./setup-database.sh
+docker-compose up --build -d
+```
+
+**For Windows (PowerShell):**
+```powershell
+.\setup-database.ps1
+docker-compose up --build -d
+```
+
+#### Option 2: Manual Setup
+
+1. **Create the database** (required only once):
+```bash
+docker exec -it postgres-db psql -U productuser -d postgres -c "CREATE DATABASE inventoryapi;"
+```
+
+2. **Start the application**:
+```bash
+docker-compose up --build -d
+```
+
+3. **Verify setup**:
+```bash
+# Check logs
+docker logs -f inventory-api
+
+# Test API
+curl -H "X-API-Key: your-secret-api-key-here" http://localhost:8082/api/inventory
+```
 
 ### Local Development
 
@@ -67,16 +115,9 @@ mvn spring-boot:run
 ```
 
 3. Access the application:
-   - API: http://localhost:8080/api/inventory
-   - Swagger UI: http://localhost:8080/swagger-ui/index.html
-   - Health: http://localhost:8080/actuator/health
-
-### Docker Deployment
-
-1. Build and run with docker-compose:
-```bash
-docker-compose up --build
-```
+   - API: http://localhost:8082/api/inventory
+   - Swagger UI: http://localhost:8082/swagger-ui/index.html
+   - Health: http://localhost:8082/actuator/health
 
 ## Configuration
 

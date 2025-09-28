@@ -4,15 +4,18 @@ import com.inventory.domain.port.InventoryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.CommandLineRunner;  
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.dao.DataAccessException;
 
 /**
  * Database seeder component that runs on application startup.
- * This component ensures the database is properly initialized with required data
- * when the application starts, but only runs if no inventory data exists.
+ * This component verifies that the database has been properly seeded with initial data.
+ * 
+ * IMPORTANT: The database must be created manually before application startup.
+ * See DATABASE_SETUP.md for detailed instructions.
  */
 @Component
 @Profile({"docker", "dev", "!test"}) // Exclude from test profile
@@ -37,7 +40,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             return;
         }
         
-        log.info("🌱 Checking if database seeding is needed...");
+        log.info("🌱 Checking database seeding status...");
         
         try {
             // Check if any inventory data exists
@@ -53,9 +56,12 @@ public class DatabaseSeeder implements CommandLineRunner {
             
             log.info("🎯 Database seeding check completed successfully");
             
+        } catch (DataAccessException e) {
+            log.warn("⚠️  Could not check inventory count, database may be initializing: {}", e.getMessage());
+            log.info("🔄 Flyway migrations will handle database setup");
+            log.warn("⚠️  Application will continue startup despite seeding check failure");
         } catch (Exception e) {
             log.error("❌ Error during database seeding check: {}", e.getMessage(), e);
-            // Don't fail the application startup for seeding issues
             log.warn("⚠️  Application will continue startup despite seeding check failure");
         }
     }
