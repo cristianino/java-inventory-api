@@ -16,10 +16,10 @@ services:
       - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:-http://java-product-api-app-dev:8080}
       - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
       - APP_API_KEY=${APP_API_KEY:-your-secret-api-key-here}
+      - DATABASE_SEEDING_ENABLED=${DATABASE_SEEDING_ENABLED:-true}
       - JAVA_OPTS=${JAVA_OPTS:--agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005}
     networks:
       - java-product-api_dev-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

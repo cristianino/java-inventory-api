@@ -13,6 +13,7 @@ services:
       - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:-http://java-product-api-app-dev:8080}
       - PRODUCTS_API_KEY=${PRODUCTS_API_KEY:-your-secret-api-key-here}
       - APP_API_KEY=${APP_API_KEY:-your-secret-api-key-here}
+      - DATABASE_SEEDING_ENABLED=${DATABASE_SEEDING_ENABLED:-true}
     networks:
       - dev-network  # Usando la misma red del product-api
     restart: unless-stopped

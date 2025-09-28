@@ -68,6 +68,11 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         return false;
     }
 
+    @Override
+    public long count() {
+        return jpaRepository.count();
+    }
+
     private InventoryEntity toEntity(Inventory inventory) {
         return new InventoryEntity(
                 inventory.getId(),
