@@ -7,7 +7,7 @@ services:
       - "8082:8080"  # Puerto diferente para evitar conflicto con product-api
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-docker}
-      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://java-product-api-postgres-dev:5432/inventoryapi}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres-db:5432/inventoryapi}
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-dev}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-devpass123}
       - EXTERNAL_PRODUCTS_SERVICE_BASE_URL=${EXTERNAL_PRODUCTS_SERVICE_BASE_URL:-http://java-product-api-app-dev:8080}
